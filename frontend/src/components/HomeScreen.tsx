@@ -19,11 +19,12 @@ export default function HomeScreen() {
 
   return (
     <div className="flex h-full flex-1 flex-col items-center justify-center px-4">
-      <div className="mb-10 flex items-center gap-3">
-        <img src="/poe-mark.svg" alt="Poe" className="h-14 w-14" />
-        <span className="text-6xl font-semibold tracking-tight text-white">
-          Poe
-        </span>
+      <div className="mb-10 flex items-center justify-center">
+        <img
+          src="/jeeo-logo.png"
+          alt="Jeeo"
+          className="h-16 w-auto max-w-xs object-contain"
+        />
       </div>
 
       <div className="w-full max-w-3xl">

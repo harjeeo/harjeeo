@@ -74,8 +74,8 @@ export default function Sidebar() {
         <div className="flex h-full w-72 flex-col p-3">
           <div className="mb-2 flex items-center justify-between px-1 py-1">
             <div className="flex items-center gap-2">
-              <img src="/poe-mark.svg" alt="Poe" className="h-8 w-8" />
-              <span className="text-lg font-semibold text-white">Poe</span>
+              <img src="/jeeo-icon.png" alt="Jeeo" className="h-8 w-8" />
+              <span className="text-lg font-semibold text-white">Jeeo</span>
             </div>
             <button
               onClick={() => setExpanded(false)}
@@ -103,7 +103,7 @@ export default function Sidebar() {
             className="mb-6 flex h-9 w-9 items-center justify-center rounded-full"
             aria-label="Expand sidebar"
           >
-            <img src="/poe-mark.svg" alt="Poe" className="h-9 w-9" />
+            <img src="/jeeo-icon.png" alt="Jeeo" className="h-9 w-9" />
           </button>
 
           <nav className="flex flex-1 flex-col items-center gap-1">
