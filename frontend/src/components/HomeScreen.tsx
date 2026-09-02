@@ -26,7 +26,7 @@ export default function HomeScreen() {
         </span>
       </div>
 
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
           {models.map((model) => (
             <button
@@ -50,7 +50,7 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        <div className="rounded-3xl border border-zinc-800 bg-[#151517] p-3 shadow-xl">
+        <div className="rounded-xl border border-zinc-800 bg-[#151517] p-3 shadow-xl">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
