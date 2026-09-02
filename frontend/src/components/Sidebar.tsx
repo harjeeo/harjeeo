@@ -3,7 +3,6 @@ import {
   Download,
   Grid2x2,
   Menu,
-  MessageSquareText,
   PenSquare,
   Search,
   Settings,
@@ -22,7 +21,6 @@ type NavItem = {
 const topItems: NavItem[] = [
   { icon: PenSquare, label: 'New chat' },
   { icon: Search, label: 'Search chats' },
-  { icon: MessageSquareText, label: 'Chats' },
 ];
 
 const menuItems: NavItem[] = [
@@ -89,7 +87,7 @@ export default function Sidebar() {
           </div>
 
           <nav className="flex flex-1 flex-col">
-            {topItems.slice(0, 2).map((item) => (
+            {topItems.map((item) => (
               <ExpandedRow key={item.label} {...item} />
             ))}
             <div className="my-2 h-px bg-zinc-800" />
