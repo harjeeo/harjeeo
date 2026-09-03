@@ -1,5 +1,8 @@
-import { ArrowRight, AtSign, Mic, Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ChatComposer from './ChatComposer';
+import { useChat } from '../context/ChatContext';
 
 type ModelPill = {
   id: string;
@@ -16,6 +19,16 @@ const models: ModelPill[] = [
 export default function HomeScreen() {
   const [selected, setSelected] = useState('assistant');
   const [message, setMessage] = useState('');
+  const { createConversation } = useChat();
+  const navigate = useNavigate();
+
+  const handleSend = () => {
+    if (!message.trim()) return;
+    const bot = models.find((m) => m.id === selected)!;
+    const id = createConversation(message.trim(), bot.name, bot.emoji);
+    setMessage('');
+    navigate(`/chat/${id}`);
+  };
 
   return (
     <div className="flex h-full flex-1 flex-col items-center justify-center px-4">
@@ -51,46 +64,7 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-[#151517] p-3 shadow-xl">
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Start a new chat"
-            rows={1}
-            className="w-full resize-none bg-transparent px-2 py-2 text-[15px] text-zinc-100 placeholder-zinc-500 outline-none"
-          />
-          <div className="mt-1 flex items-center justify-between px-1">
-            <div className="flex items-center gap-1">
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                aria-label="Attach"
-              >
-                <Plus size={19} />
-              </button>
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                aria-label="Mention a bot"
-              >
-                <AtSign size={18} />
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                aria-label="Voice input"
-              >
-                <Mic size={18} />
-              </button>
-              <button
-                disabled={!message.trim()}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-black transition-opacity disabled:opacity-40"
-                aria-label="Send"
-              >
-                <ArrowRight size={17} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <ChatComposer value={message} onChange={setMessage} onSend={handleSend} />
       </div>
     </div>
   );

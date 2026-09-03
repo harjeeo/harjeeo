@@ -12,16 +12,21 @@ import {
   Package,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 type NavItem = {
   icon: React.ElementType;
   label: string;
+  onClick?: () => void;
 };
 
-const topItems: NavItem[] = [
-  { icon: PenSquare, label: 'New chat' },
-  { icon: Search, label: 'Search chats' },
-];
+function useTopItems(): NavItem[] {
+  const navigate = useNavigate();
+  return [
+    { icon: PenSquare, label: 'New chat', onClick: () => navigate('/') },
+    { icon: Search, label: 'Search chats' },
+  ];
+}
 
 const menuItems: NavItem[] = [
   { icon: Star, label: 'Get more points' },
@@ -37,10 +42,11 @@ const bottomItems: NavItem[] = [
   { icon: Settings, label: 'Settings' },
 ];
 
-function RailButton({ icon: Icon, label }: NavItem) {
+function RailButton({ icon: Icon, label, onClick }: NavItem) {
   return (
     <div className="group relative flex justify-center">
       <button
+        onClick={onClick}
         className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
         aria-label={label}
       >
@@ -53,9 +59,12 @@ function RailButton({ icon: Icon, label }: NavItem) {
   );
 }
 
-function ExpandedRow({ icon: Icon, label }: NavItem) {
+function ExpandedRow({ icon: Icon, label, onClick }: NavItem) {
   return (
-    <button className="flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium text-zinc-100 hover:bg-zinc-800">
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-[15px] font-medium text-zinc-100 hover:bg-zinc-800"
+    >
       <Icon size={19} strokeWidth={1.75} className="shrink-0" />
       {label}
     </button>
@@ -64,6 +73,7 @@ function ExpandedRow({ icon: Icon, label }: NavItem) {
 
 export default function Sidebar() {
   const [expanded, setExpanded] = useState(false);
+  const topItems = useTopItems();
 
   return (
     <aside
