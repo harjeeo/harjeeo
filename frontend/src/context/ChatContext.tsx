@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import { sendMessageStream } from '../lib/api';
+import { useAuth } from './AuthContext';
 
 export type Message = {
   id: string;
@@ -10,67 +12,110 @@ export type Message = {
 
 export type Conversation = {
   id: string;
+  /** The backend's conversation UUID, set once the first message's stream starts. */
+  remoteId?: string;
   title: string;
   botName: string;
   botEmoji: string;
+  modelId: string;
   messages: Message[];
 };
 
 type ChatContextValue = {
   conversations: Record<string, Conversation>;
-  createConversation: (firstMessage: string, botName: string, botEmoji: string) => string;
+  createConversation: (
+    firstMessage: string,
+    botName: string,
+    botEmoji: string,
+    modelId: string,
+  ) => string;
   sendMessage: (conversationId: string, content: string) => void;
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
-const MOCK_REPLY =
-  "This is a demo response — the OpenRouter backend isn't wired up yet, so I'm just echoing back a placeholder reply while we build out the rest of the UI.";
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const [conversations, setConversations] = useState<Record<string, Conversation>>({});
+  const { token } = useAuth();
 
-function streamReply(
-  conversationId: string,
-  messageId: string,
-  setConversations: React.Dispatch<React.SetStateAction<Record<string, Conversation>>>,
-) {
-  const words = MOCK_REPLY.split(' ');
-  let index = 0;
-
-  const interval = setInterval(() => {
-    index += 1;
-    const partial = words.slice(0, index).join(' ');
-    const done = index >= words.length;
-
+  const appendMessages = useCallback((convoId: string, messages: Message[]) => {
     setConversations((prev) => {
-      const convo = prev[conversationId];
+      const convo = prev[convoId];
+      if (!convo) return prev;
+      return { ...prev, [convoId]: { ...convo, messages: [...convo.messages, ...messages] } };
+    });
+  }, []);
+
+  const updateAssistantMessage = useCallback(
+    (convoId: string, messageId: string, updater: (content: string) => string) => {
+      setConversations((prev) => {
+        const convo = prev[convoId];
+        if (!convo) return prev;
+        return {
+          ...prev,
+          [convoId]: {
+            ...convo,
+            messages: convo.messages.map((m) =>
+              m.id === messageId ? { ...m, content: updater(m.content) } : m,
+            ),
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const finishStreaming = useCallback((convoId: string, messageId: string) => {
+    setConversations((prev) => {
+      const convo = prev[convoId];
       if (!convo) return prev;
       return {
         ...prev,
-        [conversationId]: {
+        [convoId]: {
           ...convo,
-          messages: convo.messages.map((m) =>
-            m.id === messageId ? { ...m, content: partial, streaming: !done } : m,
-          ),
+          messages: convo.messages.map((m) => (m.id === messageId ? { ...m, streaming: false } : m)),
         },
       };
     });
+  }, []);
 
-    if (done) clearInterval(interval);
-  }, 45);
-}
+  const setRemoteId = useCallback((localId: string, remoteId: string) => {
+    setConversations((prev) => {
+      const convo = prev[localId];
+      if (!convo || convo.remoteId) return prev;
+      return { ...prev, [localId]: { ...convo, remoteId } };
+    });
+  }, []);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
-  const [conversations, setConversations] = useState<Record<string, Conversation>>({});
+  const runStream = useCallback(
+    (localId: string, remoteConversationId: string | undefined, modelId: string, content: string) => {
+      if (!token) return;
+      const assistantId = crypto.randomUUID();
+      appendMessages(localId, [{ id: assistantId, role: 'assistant', content: '', streaming: true }]);
+
+      sendMessageStream(
+        token,
+        { conversationId: remoteConversationId, modelId, message: content },
+        {
+          onConversationId: (remoteId) => setRemoteId(localId, remoteId),
+          onDelta: (text) => {
+            updateAssistantMessage(localId, assistantId, (prev) => prev + text);
+          },
+          onDone: () => finishStreaming(localId, assistantId),
+          onError: (message) => {
+            updateAssistantMessage(localId, assistantId, () => `⚠️ ${message}`);
+            finishStreaming(localId, assistantId);
+          },
+        },
+      );
+    },
+    [token, appendMessages, updateAssistantMessage, finishStreaming, setRemoteId],
+  );
 
   const createConversation = useCallback(
-    (firstMessage: string, botName: string, botEmoji: string) => {
+    (firstMessage: string, botName: string, botEmoji: string, modelId: string) => {
       const id = crypto.randomUUID();
       const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: firstMessage };
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: '',
-        streaming: true,
-      };
 
       setConversations((prev) => ({
         ...prev,
@@ -79,39 +124,27 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           title: firstMessage.slice(0, 40),
           botName,
           botEmoji,
-          messages: [userMessage, assistantMessage],
+          modelId,
+          messages: [userMessage],
         },
       }));
 
-      streamReply(id, assistantMessage.id, setConversations);
+      runStream(id, undefined, modelId, firstMessage);
       return id;
     },
-    [],
+    [runStream],
   );
 
-  const sendMessage = useCallback((conversationId: string, content: string) => {
-    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content };
-    const assistantMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: '',
-      streaming: true,
-    };
-
-    setConversations((prev) => {
-      const convo = prev[conversationId];
-      if (!convo) return prev;
-      return {
-        ...prev,
-        [conversationId]: {
-          ...convo,
-          messages: [...convo.messages, userMessage, assistantMessage],
-        },
-      };
-    });
-
-    streamReply(conversationId, assistantMessage.id, setConversations);
-  }, []);
+  const sendMessage = useCallback(
+    (conversationId: string, content: string) => {
+      const convo = conversations[conversationId];
+      if (!convo) return;
+      const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content };
+      appendMessages(conversationId, [userMessage]);
+      runStream(conversationId, convo.remoteId, convo.modelId, content);
+    },
+    [conversations, appendMessages, runStream],
+  );
 
   return (
     <ChatContext.Provider value={{ conversations, createConversation, sendMessage }}>

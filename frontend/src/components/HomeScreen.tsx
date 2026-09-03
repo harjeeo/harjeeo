@@ -2,30 +2,35 @@ import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ChatComposer from './ChatComposer';
+import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 
 type ModelPill = {
   id: string;
   name: string;
   emoji: string;
+  modelId: string;
 };
 
+// Placeholder OpenRouter model ids until the catalog is synced (POST /api/admin/models/sync)
+// and these get wired up to real, verified free-tier models.
 const models: ModelPill[] = [
-  { id: 'assistant', name: 'Assistant', emoji: '🤖' },
-  { id: 'meal-planner', name: 'SmartMealPlannerAI', emoji: '🍲' },
-  { id: 'gpt-sol', name: 'GPT-5.6-Sol', emoji: '✨' },
+  { id: 'assistant', name: 'Assistant', emoji: '🤖', modelId: 'openai/gpt-oss-20b:free' },
+  { id: 'meal-planner', name: 'SmartMealPlannerAI', emoji: '🍲', modelId: 'openai/gpt-oss-20b:free' },
+  { id: 'gpt-sol', name: 'GPT-5.6-Sol', emoji: '✨', modelId: 'openai/gpt-oss-20b:free' },
 ];
 
 export default function HomeScreen() {
   const [selected, setSelected] = useState('assistant');
   const [message, setMessage] = useState('');
   const { createConversation } = useChat();
+  const { token } = useAuth();
   const navigate = useNavigate();
 
   const handleSend = () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !token) return;
     const bot = models.find((m) => m.id === selected)!;
-    const id = createConversation(message.trim(), bot.name, bot.emoji);
+    const id = createConversation(message.trim(), bot.name, bot.emoji, bot.modelId);
     setMessage('');
     navigate(`/chat/${id}`);
   };
