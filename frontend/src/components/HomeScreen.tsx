@@ -12,12 +12,11 @@ type ModelPill = {
   modelId: string;
 };
 
-// Placeholder OpenRouter model ids until the catalog is synced (POST /api/admin/models/sync)
-// and these get wired up to real, verified free-tier models.
+// Verified free-tier OpenRouter model ids (from the synced ai_models catalog).
 const models: ModelPill[] = [
-  { id: 'assistant', name: 'Assistant', emoji: '🤖', modelId: 'openai/gpt-oss-20b:free' },
-  { id: 'meal-planner', name: 'SmartMealPlannerAI', emoji: '🍲', modelId: 'openai/gpt-oss-20b:free' },
-  { id: 'gpt-sol', name: 'GPT-5.6-Sol', emoji: '✨', modelId: 'openai/gpt-oss-20b:free' },
+  { id: 'assistant', name: 'Assistant', emoji: '🤖', modelId: 'z-ai/glm-5.2:free' },
+  { id: 'meal-planner', name: 'SmartMealPlannerAI', emoji: '🍲', modelId: 'thinkingmachines/inkling:free' },
+  { id: 'gpt-sol', name: 'GPT-5.6-Sol', emoji: '✨', modelId: 'nvidia/nemotron-3.5-lightning:free' },
 ];
 
 export default function HomeScreen() {
